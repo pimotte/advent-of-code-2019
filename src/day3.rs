@@ -46,7 +46,7 @@ impl FromStr for Instruction {
 pub fn day3() {
     let f = File::open("day3.txt").unwrap();
     let file = BufReader::new(&f);
-    let mut sets: Vec<HashSet<(i64, i64)>> = vec![];
+    let mut sets: Vec<HashSet<(i64, i64, i64)>> = vec![];
     for line in file.lines() {
         let line_str = line.unwrap();
         let input = line_str.split(",").map(|i| Instruction::from_str(i).unwrap()).collect::<VecDeque<Instruction>>();
@@ -54,16 +54,30 @@ pub fn day3() {
         println!("{:?}", tmp);
         sets.push(tmp);
     }
-    let intersection = sets[0].intersection(&sets[1]);
+    let proj1 = sets[0].iter().map(|(x, y, _z)| (*x, *y)).collect::<HashSet<(i64, i64)>>();
+    let proj2 = sets[1].iter().map(|(x, y, _z)| (*x, *y)).collect::<HashSet<(i64, i64)>>();
+    let intersection = proj1.intersection(&proj2);
     println!("{:?}", intersection);
 
-    let result = intersection.map(|(x, y)| x.abs() + y.abs()).min().unwrap();
+    let mut minimum = std::i64::MAX;
 
-    println!("{:?}", result)
+    for (x, y) in intersection {
+        let steps1 = sets[0].iter().filter(|(x1, y1, _z1)| x1 == x && y1 == y).map(|(_x, _y, z)| z).min().unwrap();
+        let steps2 = sets[1].iter().filter(|(x1, y1, _z1)| x1 == x && y1 == y).map(|(_x, _y, z)| z).min().unwrap();
+
+        if steps1 + steps2 < minimum {
+            minimum = steps1 + steps2
+        }
+    }
+
+
+
+    println!("{:?}", minimum)
 }
 
-pub fn compute_squares(mut input: VecDeque<Instruction>) -> HashSet<(i64, i64)> {
+pub fn compute_squares(mut input: VecDeque<Instruction>) -> HashSet<(i64, i64, i64)> {
     let mut current_pos = (0, 0);
+    let mut signal = 0;
     let mut result = HashSet::new();
     while input.len() > 0 {
         match input.pop_front() {
@@ -79,9 +93,10 @@ pub fn compute_squares(mut input: VecDeque<Instruction>) -> HashSet<(i64, i64)> 
                 for _i in 0..i.steps {
                     current_pos.0 += mutation.0;
                     current_pos.1 += mutation.1;
+                    signal += 1;
 
                     println!("{:?}", current_pos);
-                    result.insert(current_pos.clone());
+                    result.insert((current_pos.0, current_pos.1, signal));
                 }
                 
             },
